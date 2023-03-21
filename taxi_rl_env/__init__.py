@@ -1,4 +1,3 @@
-
 from typing import Optional
 
 import numpy as np
@@ -7,9 +6,8 @@ from gym import spaces
 from gym.envs.toy_text import taxi
 from gym.envs.toy_text.utils import categorical_sample
 
-
 DEFAULT_MAP = [
-    #20 rows, 20 cols,
+    # 20 rows, 20 cols,
     "+---------------------------------------+",
     "|R: | : : : : : : : : : : : : : : : : :G|",
     "| : | : : : : : : | : : : : : : : : : : |",
@@ -140,14 +138,14 @@ class CustomTaxiEnv(taxi.TaxiEnv):
         "render_fps": 4,
     }
 
-    def __init__(self, render_mode: Optional[str] = None, MAP = DEFAULT_MAP, rows = 20, cols = 20):
+    def __init__(self, render_mode: Optional[str] = None, MAP=DEFAULT_MAP, rows=20, cols=20):
         self.desc = np.asarray(MAP, dtype="c")
         self.n = rows
         self.m = cols
         self.locs = locs = [(0, 0), (0, self.m - 1), (self.n - 1, 0), (self.n - 1, self.m - 1)]
         self.locs_colors = [(255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255)]
 
-        num_states = self.n * self.m * 4 * 5 #500
+        num_states = self.n * self.m * 4 * 5  # 500
         num_rows = self.n
         num_columns = self.m
         max_row = num_rows - 1
@@ -201,9 +199,9 @@ class CustomTaxiEnv(taxi.TaxiEnv):
                             new_state = self.encode(
                                 new_row, new_col, new_pass_idx, dest_idx
                             )
-                            #self.P[state][action].append(
-                            #    (1.0, new_state, reward, terminated)
-                            #)
+                            self.P[state][action].append(
+                                (1.0, new_state, reward, terminated)
+                            )
         self.initial_state_distrib /= self.initial_state_distrib.sum()
         self.action_space = spaces.Discrete(num_actions)
         self.observation_space = spaces.Discrete(num_states)
@@ -248,6 +246,34 @@ class CustomTaxiEnv(taxi.TaxiEnv):
         assert 0 <= i < 8000
         return reversed(out)
 
+    def is_passenger_in_taxi(self, state):
+        d_state = list(self.decode(state))
+        passenger_loc = d_state[2]
+        return passenger_loc == 5
+
+    def is_taxi_at_dest(self, state):
+        d_state = list(self.decode(state))
+        taxi_loc = (d_state[0], d_state[1])
+        dest_loc = self.locs[d_state[3]]
+        return taxi_loc == dest_loc
+
+    def get_taxi_loc(self, state):
+        d_state = list(self.decode(state))
+        taxi_loc = (d_state[0], d_state[1])
+        return taxi_loc
+
+    def get_dest_loc(self, state):
+        d_state = list(self.decode(state))
+        dest_loc = self.locs[d_state[3]]
+        return dest_loc
+
+    def get_pass_loc(self, state):
+        d_state = list(self.decode(state))
+        if d_state[2] == 4:
+            return self.get_taxi_loc(state)
+        pass_loc = self.locs[d_state[2]]
+        return pass_loc
+
     def action_mask(self, state: int):
         """Computes an action mask for the action space using the state information."""
         mask = np.zeros(6, dtype=np.int8)
@@ -279,7 +305,6 @@ class CustomTaxiEnv(taxi.TaxiEnv):
         if self.render_mode == "human":
             self.render()
         return (int(s), r, t, False, {"prob": p, "action_mask": self.action_mask(s)})
-
 
 # Taxi rider from https://franuka.itch.io/rpg-asset-pack
 # All other assets by Mel Tillery http://www.cyaneus.com/
