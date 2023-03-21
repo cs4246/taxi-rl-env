@@ -249,7 +249,7 @@ class CustomTaxiEnv(taxi.TaxiEnv):
     def is_passenger_in_taxi(self, state):
         d_state = list(self.decode(state))
         passenger_loc = d_state[2]
-        return passenger_loc == 5
+        return passenger_loc == 4
 
     def is_taxi_at_dest(self, state):
         d_state = list(self.decode(state))
